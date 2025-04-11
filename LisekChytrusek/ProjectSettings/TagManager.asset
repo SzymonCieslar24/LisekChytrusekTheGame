@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 3
   tags:
   - Ground
+  - CinemachineTarget
+  - Water
+  - Chicken
   layers:
   - Default
   - TransparentFX

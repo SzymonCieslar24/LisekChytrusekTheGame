@@ -108,6 +108,17 @@ namespace StarterAssets
 
         private const float _threshold = 0.01f;
 
+        public float SwimSpeed = 2.5f;
+        [SerializeField] private float waterSurfaceY = 2.5f;  // poziom powierzchni wody
+        [SerializeField] private float floatingSmooth = 4f;   // jak szybko postać unosi się do powierzchni
+        [SerializeField] private float bobbingAmplitude = 0.1f; // amplituda falowania (opcjonalnie)
+        [SerializeField] private float bobbingFrequency = 1.5f;
+
+        private float bobbingOffset = 0f;
+        [SerializeField] private Vector3 waterCurrent = new Vector3(1f, 0f, 0f);
+        [SerializeField] private float currentStrength = 1.5f;
+        private bool _inWater = false;
+
         private bool _hasAnimator;
 
         private bool IsCurrentDeviceMouse
@@ -240,6 +251,10 @@ namespace StarterAssets
                 // round speed to 3 decimal places
                 _speed = Mathf.Round(_speed * 1000f) / 1000f;
             }
+            else if( _inWater)
+            {
+                _speed = SwimSpeed;
+            }
             else
             {
                 _speed = targetSpeed;
@@ -268,7 +283,22 @@ namespace StarterAssets
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             // move the player
+            float movementAmount = _input.move.magnitude;
+            float currentMultiplier = Mathf.Lerp(1f, 0.2f, movementAmount);
+            Vector3 currentEffect = _inWater ? waterCurrent * (currentStrength * currentMultiplier) : Vector3.zero;
+
+            bobbingOffset = Mathf.Sin(Time.time * bobbingFrequency) * bobbingAmplitude;
+
+            if (_inWater)
+            {
+                Vector3 position = transform.position;
+                float targetY = Mathf.Lerp(position.y, waterSurfaceY + bobbingOffset, Time.deltaTime * floatingSmooth);
+                float yDifference = targetY - position.y;
+                _verticalVelocity = yDifference / Time.deltaTime;
+            }
+
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
+                             currentEffect * Time.deltaTime +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
 
             // update animator if using character
@@ -300,7 +330,7 @@ namespace StarterAssets
                 }
 
                 // Jump
-                if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                if (_input.jump && _jumpTimeoutDelta <= 0.0f && !_inWater)
                 {
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
@@ -341,10 +371,19 @@ namespace StarterAssets
                 _input.jump = false;
             }
 
-            // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
-            if (_verticalVelocity < _terminalVelocity)
+            if (_inWater)
             {
-                _verticalVelocity += Gravity * Time.deltaTime;
+                // unoszenie się do poziomu wody
+                float targetFloatHeight = 0.5f;
+                _verticalVelocity = Mathf.Lerp(_verticalVelocity, targetFloatHeight, Time.deltaTime * 2f);
+            }
+            else
+            {
+                // standardowa grawitacja
+                if (_verticalVelocity < _terminalVelocity)
+                {
+                    _verticalVelocity += Gravity * Time.deltaTime;
+                }
             }
         }
 
@@ -386,6 +425,26 @@ namespace StarterAssets
             if (animationEvent.animatorClipInfo.weight > 0.5f)
             {
                 AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Water"))
+            {
+                _inWater = true;
+            }
+            if (other.CompareTag("Chicken"))
+            {
+                Destroy(other.gameObject);
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Water"))
+            {
+                _inWater = false;
             }
         }
     }
