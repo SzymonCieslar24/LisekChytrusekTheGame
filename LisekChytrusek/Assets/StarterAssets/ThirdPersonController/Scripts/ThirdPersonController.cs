@@ -1,4 +1,5 @@
-﻿ using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
 #endif
@@ -109,10 +110,12 @@ namespace StarterAssets
         private const float _threshold = 0.01f;
 
         public float SwimSpeed = 2.5f;
-        [SerializeField] private float waterSurfaceY = 2.5f;  // poziom powierzchni wody
-        [SerializeField] private float floatingSmooth = 4f;   // jak szybko postać unosi się do powierzchni
-        [SerializeField] private float bobbingAmplitude = 0.1f; // amplituda falowania (opcjonalnie)
+        [SerializeField] private float waterSurfaceY = 1f;  // poziom powierzchni wody
+        [SerializeField] private float floatingSmooth = 1f;   // jak szybko postać unosi się do powierzchni
+        [SerializeField] private float bobbingAmplitude = 1f; // amplituda falowania (opcjonalnie)
         [SerializeField] private float bobbingFrequency = 1.5f;
+
+        private float currentSpeed;
 
         private float bobbingOffset = 0f;
         [SerializeField] private Vector3 waterCurrent = new Vector3(1f, 0f, 0f);
@@ -224,8 +227,19 @@ namespace StarterAssets
 
         private void Move()
         {
+            if (_inWater)
+            {
+                currentSpeed = SwimSpeed;  // Woda -> Prędkość pływania
+            }
+            else
+            {
+                currentSpeed = MoveSpeed;  // Poza wodą -> Normalna prędkość
+            }
+
+            Debug.Log(currentSpeed);
+
             // set target speed based on move speed, sprint speed and if sprint is pressed
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            float targetSpeed = _input.sprint ? SprintSpeed : currentSpeed;
 
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -250,10 +264,6 @@ namespace StarterAssets
 
                 // round speed to 3 decimal places
                 _speed = Mathf.Round(_speed * 1000f) / 1000f;
-            }
-            else if( _inWater)
-            {
-                _speed = SwimSpeed;
             }
             else
             {
@@ -445,6 +455,14 @@ namespace StarterAssets
             if (other.CompareTag("Water"))
             {
                 _inWater = false;
+            }
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            if (other.CompareTag("Water"))
+            {
+                _inWater = true             ;
             }
         }
     }
