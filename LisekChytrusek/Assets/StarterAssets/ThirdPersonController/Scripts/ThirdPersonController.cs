@@ -1,4 +1,5 @@
 ﻿using TMPro;
+using System.Collections;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
@@ -99,6 +100,15 @@ namespace StarterAssets
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
 
+        //others
+        private int licznik = 0;
+        private bool isMovementLocked = false;
+        private bool isGameEnded = false;
+
+        [SerializeField] private TerrainDeformer terrainDeformer;
+        [SerializeField] private GameObject endGame;
+
+
 #if ENABLE_INPUT_SYSTEM 
         private PlayerInput _playerInput;
 #endif
@@ -158,6 +168,10 @@ namespace StarterAssets
 #else
 			Debug.LogError( "Starter Assets package is missing dependencies. Please use Tools/Starter Assets/Reinstall Dependencies to fix it");
 #endif
+            if (terrainDeformer == null)
+            {
+                terrainDeformer = FindFirstObjectByType<TerrainDeformer>();
+            }
 
             AssignAnimationIDs();
 
@@ -170,10 +184,44 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
+            if (isGameEnded)
+            {
+                Cursor.visible = true;
+
+                if (terrainDeformer != null)
+                {
+                    StartCoroutine(terrainDeformer.DeformTerrainGradually());
+                }
+                StartCoroutine(DelayedLockMovement(5f));
+                isGameEnded = false;
+            }
+
             JumpAndGravity();
             GroundedCheck();
+
+            if (isMovementLocked)
+                return;
+            
             Move();
         }
+
+        private IEnumerator DelayedLockMovement(float delaySeconds)
+        {
+            yield return new WaitForSeconds(delaySeconds);
+            isMovementLocked = true;
+            Debug.Log("Ruch zablokowany po animacji.");
+
+            _animator.SetFloat(_animIDSpeed, 0f);
+            _animator.SetFloat(_animIDMotionSpeed, 0f);
+
+            if (endGame == null)
+            {
+                endGame = GameObject.Find("EndGamePanel");
+            }
+
+            endGame.SetActive(true);
+        }
+
 
         private void LateUpdate()
         {
@@ -447,6 +495,10 @@ namespace StarterAssets
             if (other.CompareTag("Chicken"))
             {
                 Destroy(other.gameObject);
+                ++licznik;
+
+                if (licznik >= 5)
+                    isGameEnded=true;
             }
         }
 

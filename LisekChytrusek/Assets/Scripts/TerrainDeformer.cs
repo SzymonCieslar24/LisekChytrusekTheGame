@@ -12,7 +12,6 @@ public class TerrainDeformer : MonoBehaviour
     private Terrain terrain;
     private TerrainData terrainData;
     private float[,] originalHeights;
-    private float targetHeight;
 
     void Start()
     {
@@ -56,7 +55,7 @@ public class TerrainDeformer : MonoBehaviour
         terrainData.SetHeights(0, 0, originalHeights);
     }
 
-    IEnumerator DeformTerrainGradually()
+    public IEnumerator DeformTerrainGradually()
     {
         Vector3 terrainPos = playerTransform.position - terrain.transform.position;
 
