@@ -19,7 +19,6 @@ public class TerrainDeformer : MonoBehaviour
 
         if (terrain == null)
         {
-            Debug.LogError("Brak aktywnego terenu!");
             return;
         }
 

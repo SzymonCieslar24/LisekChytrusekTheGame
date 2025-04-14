@@ -209,7 +209,6 @@ namespace StarterAssets
         {
             yield return new WaitForSeconds(delaySeconds);
             isMovementLocked = true;
-            Debug.Log("Ruch zablokowany po animacji.");
 
             _animator.SetFloat(_animIDSpeed, 0f);
             _animator.SetFloat(_animIDMotionSpeed, 0f);
@@ -283,8 +282,6 @@ namespace StarterAssets
             {
                 currentSpeed = MoveSpeed;  // Poza wodą -> Normalna prędkość
             }
-
-            Debug.Log(currentSpeed);
 
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : currentSpeed;
